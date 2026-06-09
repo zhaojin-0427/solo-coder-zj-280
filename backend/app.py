@@ -3,8 +3,8 @@ from flask_cors import CORS
 
 from config import Config
 from utils.database import db
-from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp, cost_bp, work_orders_bp
-from models import Material, WindChime, TuningCorrection, WorkOrder
+from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp, cost_bp, work_orders_bp, bookings_bp, feedbacks_bp
+from models import Material, WindChime, TuningCorrection, WorkOrder, Booking, Feedback
 
 
 def create_app():
@@ -25,6 +25,8 @@ def create_app():
     app.register_blueprint(statistics_bp)
     app.register_blueprint(cost_bp)
     app.register_blueprint(work_orders_bp)
+    app.register_blueprint(bookings_bp)
+    app.register_blueprint(feedbacks_bp)
 
     @app.route("/api/health")
     def health_check():

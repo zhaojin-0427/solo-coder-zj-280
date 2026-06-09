@@ -4,6 +4,8 @@ from sqlalchemy.orm import joinedload
 from .base_repository import BaseRepository
 from models.chime import WindChime
 from models.tuning_correction import TuningCorrection
+from models.booking import Booking
+from models.feedback import Feedback
 from utils.database import db
 import json
 
@@ -15,7 +17,7 @@ class ChimeRepository(BaseRepository[WindChime]):
     def get_all_with_timestamps(self, skip: int = 0, limit: int = 100) -> List[WindChime]:
         stmt = (
             select(WindChime)
-            .options(joinedload(WindChime.tuning_corrections))
+            .options(joinedload(WindChime.tuning_corrections), joinedload(WindChime.bookings).joinedload(Booking.feedback))
             .order_by(WindChime.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -23,12 +25,11 @@ class ChimeRepository(BaseRepository[WindChime]):
         result = self.db_session.execute(stmt)
         return list(result.scalars().unique().all())
 
-    def get_by_id(self, chime_id: str) -> Optional[WindChime]:
-        stmt = (
-            select(WindChime)
-            .options(joinedload(WindChime.tuning_corrections))
-            .where(WindChime.id == chime_id)
-        )
+    def get_by_id(self, chime_id: str, include_bookings: bool = True) -> Optional[WindChime]:
+        stmt = select(WindChime).options(joinedload(WindChime.tuning_corrections))
+        if include_bookings:
+            stmt = stmt.options(joinedload(WindChime.bookings).joinedload(Booking.feedback))
+        stmt = stmt.where(WindChime.id == chime_id)
         result = self.db_session.execute(stmt)
         return result.scalars().unique().one_or_none()
 

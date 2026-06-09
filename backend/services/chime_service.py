@@ -13,8 +13,8 @@ class ChimeService:
     def get_all(self, skip: int = 0, limit: int = 100) -> List:
         return self.repository.get_all_with_timestamps(skip=skip, limit=limit)
 
-    def get_by_id(self, chime_id: str):
-        return self.repository.get_by_id(chime_id)
+    def get_by_id(self, chime_id: str, include_bookings: bool = True):
+        return self.repository.get_by_id(chime_id, include_bookings=include_bookings)
 
     def create(self, data: dict):
         chime_data = {

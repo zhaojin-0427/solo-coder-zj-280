@@ -4,6 +4,8 @@ from .chimes import chimes_bp
 from .statistics import statistics_bp
 from .cost import cost_bp
 from .work_orders import work_orders_bp
+from .bookings import bookings_bp
+from .feedbacks import feedbacks_bp
 
 __all__ = [
     "materials_bp",
@@ -12,4 +14,6 @@ __all__ = [
     "statistics_bp",
     "cost_bp",
     "work_orders_bp",
+    "bookings_bp",
+    "feedbacks_bp",
 ]

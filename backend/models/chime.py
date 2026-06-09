@@ -21,17 +21,46 @@ class WindChime(db.Model):
 
     tuning_corrections = relationship("TuningCorrection", back_populates="chime", cascade="all, delete-orphan")
 
-    def to_dict(self) -> dict:
+    def to_dict(self, include_bookings: bool = False) -> dict:
         import json
-        return {
+        chord_info = json.loads(self.chord_info) if self.chord_info else {}
+
+        has_booking = False
+        latest_feedback_status = None
+        latest_feedback_date = None
+        latest_satisfaction_score = chord_info.get("latest_satisfaction_score")
+
+        if self.bookings:
+            has_booking = len(self.bookings) > 0
+            for booking in sorted(self.bookings, key=lambda b: b.booking_date, reverse=True):
+                if booking.feedback:
+                    latest_feedback_status = booking.status
+                    latest_feedback_date = booking.feedback.created_at.isoformat() if booking.feedback.created_at else None
+                    break
+
+        data = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
             "materials": json.loads(self.materials) if self.materials else [],
             "hang_order": json.loads(self.hang_order) if self.hang_order else [],
-            "chord_info": json.loads(self.chord_info) if self.chord_info else {},
+            "chord_info": chord_info,
             "cost_snapshot": json.loads(self.cost_snapshot) if self.cost_snapshot else None,
             "tuning_corrections": [tc.to_dict() for tc in self.tuning_corrections] if self.tuning_corrections else [],
+            "has_booking": has_booking,
+            "booking_count": len(self.bookings) if self.bookings else 0,
+            "latest_feedback_status": latest_feedback_status,
+            "latest_feedback_date": latest_feedback_date,
+            "latest_satisfaction_score": latest_satisfaction_score,
+            "customer_tags": chord_info.get("customer_tags", []),
+            "improvement_suggestions": chord_info.get("improvement_suggestions", []),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+        if include_bookings and self.bookings:
+            data["bookings"] = [booking.to_dict() for booking in sorted(
+                self.bookings, key=lambda b: b.booking_date, reverse=True
+            )]
+
+        return data

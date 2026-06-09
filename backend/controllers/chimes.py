@@ -22,10 +22,11 @@ def get_chimes():
 
 @chimes_bp.route("/<chime_id>", methods=["GET"])
 def get_chime(chime_id):
-    chime = chime_service.get_by_id(chime_id)
+    include_bookings = request.args.get("include_bookings", "true", type=str).lower() == "true"
+    chime = chime_service.get_by_id(chime_id, include_bookings=include_bookings)
     if not chime:
         return jsonify({"error": "Chime not found"}), 404
-    return jsonify(chime.to_dict())
+    return jsonify(chime.to_dict(include_bookings=include_bookings))
 
 
 @chimes_bp.route("", methods=["POST"])

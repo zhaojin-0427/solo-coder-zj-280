@@ -72,6 +72,50 @@ CREATE INDEX idx_work_orders_status ON work_orders(status);
 CREATE INDEX idx_work_orders_priority ON work_orders(priority);
 CREATE INDEX idx_work_orders_delivery ON work_orders(delivery_date);
 
+-- 预约表
+CREATE TABLE IF NOT EXISTS bookings (
+    id TEXT PRIMARY KEY,
+    chime_id TEXT NOT NULL REFERENCES wind_chimes(id) ON DELETE CASCADE,
+    customer_name TEXT NOT NULL,
+    contact_info TEXT NOT NULL,
+    booking_date DATETIME NOT NULL,
+    scene TEXT NOT NULL CHECK (scene IN ('indoor', 'courtyard', 'gift_custom', 'other')),
+    focus_points TEXT,
+    remarks TEXT,
+    status TEXT NOT NULL DEFAULT 'pending_audio' CHECK (status IN ('pending_audio', 'completed', 'pending_followup', 'archived', 'cancelled')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_bookings_chime ON bookings(chime_id);
+CREATE INDEX idx_bookings_status ON bookings(status);
+CREATE INDEX idx_bookings_date ON bookings(booking_date);
+CREATE INDEX idx_bookings_customer ON bookings(customer_name);
+
+-- 反馈表
+CREATE TABLE IF NOT EXISTS feedbacks (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    chime_id TEXT NOT NULL REFERENCES wind_chimes(id) ON DELETE CASCADE,
+    tone_score INTEGER NOT NULL CHECK (tone_score >= 1 AND tone_score <= 5),
+    appearance_score INTEGER NOT NULL CHECK (appearance_score >= 1 AND appearance_score <= 5),
+    price_score INTEGER NOT NULL CHECK (price_score >= 1 AND price_score <= 5),
+    material_preference TEXT CHECK (material_preference IN ('aluminum', 'copper', 'bamboo', 'glass', 'mixed')),
+    tone_opinion TEXT,
+    appearance_opinion TEXT,
+    price_opinion TEXT,
+    improvement_suggestions TEXT,
+    tags TEXT,
+    overall_conclusion TEXT,
+    follow_up_date DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_feedbacks_booking ON feedbacks(booking_id);
+CREATE INDEX idx_feedbacks_chime ON feedbacks(chime_id);
+CREATE INDEX idx_feedbacks_created ON feedbacks(created_at);
+
 -- 初始化示例数据
 INSERT INTO materials (id, material_type, name, length, diameter, wall_thickness, theoretical_pitch, theoretical_note, purchase_price, stock_quantity, loss_rate, supplier) VALUES
 ('mat_001', 'copper', '长铜铃', 180, 25, 1.5, 523.25, 'C5', 85.5, 50, 3.5, '上海铜管厂'),
