@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Archive, Search, FolderOpen } from 'lucide-react';
 import PageContainer from '../components/layout/PageContainer';
 import ChimeCard from '../components/archive/ChimeCard';
@@ -8,7 +9,8 @@ import { useAppStore } from '../store/useAppStore';
 import { WindChime } from '../types';
 
 const ArchivePage = () => {
-  const { chimes, isLoading, fetchChimes, deleteChime, loadChimeToEditor } = useAppStore();
+  const navigate = useNavigate();
+  const { chimes, isLoading, fetchChimes, deleteChime, loadChimeToEditor, fetchMaterials } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -26,8 +28,10 @@ const ArchivePage = () => {
     }
   };
 
-  const handleLoadToEditor = (chime: WindChime) => {
+  const handleLoadToEditor = async (chime: WindChime) => {
+    await fetchMaterials();
     loadChimeToEditor(chime);
+    navigate('/listener');
   };
 
   return (

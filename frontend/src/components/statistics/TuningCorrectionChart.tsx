@@ -41,12 +41,16 @@ interface TuningCorrectionChartProps {
       count: number;
     }>;
     common_corrections: CorrectionRecord[];
-  };
+  } | Array<any>;
 }
 
 const TuningCorrectionChart = ({ data }: TuningCorrectionChartProps) => {
+  const normalizedData = Array.isArray(data)
+    ? { avg_correction_by_material: [], common_corrections: [] }
+    : data;
+
   const chartData = {
-    labels: data.avg_correction_by_material.map((d) => {
+    labels: normalizedData.avg_correction_by_material.map((d) => {
       const names: Record<string, string> = {
         aluminum: '铝',
         copper: '铜',
@@ -58,7 +62,7 @@ const TuningCorrectionChart = ({ data }: TuningCorrectionChartProps) => {
     datasets: [
       {
         label: '平均修正量 (音分)',
-        data: data.avg_correction_by_material.map((d) => d.avg_correction),
+        data: normalizedData.avg_correction_by_material.map((d) => d.avg_correction),
         borderColor: '#2D4A3E',
         backgroundColor: 'rgba(45, 74, 62, 0.1)',
         borderWidth: 3,
@@ -96,7 +100,7 @@ const TuningCorrectionChart = ({ data }: TuningCorrectionChartProps) => {
       tooltip: {
         callbacks: {
           afterLabel: function(context: any) {
-            const item = data.avg_correction_by_material[context.dataIndex];
+            const item = normalizedData.avg_correction_by_material[context.dataIndex];
             return `修正次数: ${item.count} 次`;
           }
         }
@@ -121,11 +125,11 @@ const TuningCorrectionChart = ({ data }: TuningCorrectionChartProps) => {
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
       <Line data={chartData} options={options} />
 
-      {data.common_corrections && data.common_corrections.length > 0 && (
+      {normalizedData.common_corrections && normalizedData.common_corrections.length > 0 && (
         <div className="mt-6 pt-6 border-t border-gray-100">
           <h4 className="text-sm font-medium text-gray-700 mb-3">高频修正记录</h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
-            {data.common_corrections.slice(0, 5).map((correction, index) => {
+            {normalizedData.common_corrections.slice(0, 5).map((correction, index) => {
               const names: Record<string, string> = {
                 aluminum: '铝',
                 copper: '铜',

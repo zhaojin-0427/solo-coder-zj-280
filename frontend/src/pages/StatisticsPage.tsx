@@ -47,7 +47,7 @@ const StatisticsPage = () => {
   };
 
   const avgMaterialsPerChime = chimes.length > 0
-    ? (chimes.reduce((sum, c) => sum + c.materials.length, 0) / chimes.length).toFixed(1)
+    ? (chimes.reduce((sum, c) => sum + (Array.isArray(c.materials) ? c.materials.length : 0), 0) / chimes.length).toFixed(1)
     : '0';
 
   return (

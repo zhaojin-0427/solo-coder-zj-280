@@ -10,14 +10,16 @@ export const statisticsService = {
       api.get('/api/statistics/tuning-corrections'),
     ]);
 
+    const tuningData = tuning.data;
+    const normalizedTuning = Array.isArray(tuningData)
+      ? { avg_correction_by_material: [], common_corrections: [] }
+      : tuningData || { avg_correction_by_material: [], common_corrections: [] };
+
     return {
       pitch_range_by_material: pitchRange.data || [],
       chord_statistics: chords.data || [],
       material_usage: usage.data || [],
-      tuning_statistics: tuning.data || {
-        avg_correction_by_material: [],
-        common_corrections: [],
-      },
+      tuning_statistics: normalizedTuning,
     };
   },
 

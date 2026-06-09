@@ -14,22 +14,44 @@ import { commonChartOptions } from '../../utils/chartUtils';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface PitchRangeChartProps {
-  data: Array<{
-    material_type: string;
-    min_pitch: number;
-    max_pitch: number;
-    avg_pitch: number;
-    count: number;
-  }>;
+  data: Array<
+    {
+      material: string;
+      material_type?: string;
+      min_freq: number;
+      max_freq: number;
+      min_pitch?: number;
+      max_pitch?: number;
+      avg_pitch?: number;
+      count: number;
+    } | {
+      material?: string;
+      material_type: string;
+      min_freq?: number;
+      max_freq?: number;
+      min_pitch: number;
+      max_pitch: number;
+      avg_pitch: number;
+      count: number;
+    }
+  >;
 }
 
 const PitchRangeChart = ({ data }: PitchRangeChartProps) => {
+  const normalizedData = data.map((d) => ({
+    material_type: d.material_type || d.material,
+    min_pitch: d.min_pitch ?? d.min_freq,
+    max_pitch: d.max_pitch ?? d.max_freq,
+    avg_pitch: d.avg_pitch ?? ((d.min_freq ?? d.min_pitch ?? 0) + (d.max_freq ?? d.max_pitch ?? 0)) / 2,
+    count: d.count,
+  }));
+
   const chartData = {
-    labels: data.map((d) => MATERIAL_TYPE_INFO[d.material_type as keyof typeof MATERIAL_TYPE_INFO]?.display_name || d.material_type),
+    labels: normalizedData.map((d) => MATERIAL_TYPE_INFO[d.material_type as keyof typeof MATERIAL_TYPE_INFO]?.display_name || d.material_type),
     datasets: [
       {
         label: '最低音高 (Hz)',
-        data: data.map((d) => d.min_pitch),
+        data: normalizedData.map((d) => d.min_pitch),
         backgroundColor: 'rgba(139, 105, 20, 0.6)',
         borderColor: '#8B6914',
         borderWidth: 1,
@@ -37,7 +59,7 @@ const PitchRangeChart = ({ data }: PitchRangeChartProps) => {
       },
       {
         label: '平均音高 (Hz)',
-        data: data.map((d) => d.avg_pitch),
+        data: normalizedData.map((d) => d.avg_pitch),
         backgroundColor: 'rgba(45, 74, 62, 0.6)',
         borderColor: '#2D4A3E',
         borderWidth: 1,
@@ -45,7 +67,7 @@ const PitchRangeChart = ({ data }: PitchRangeChartProps) => {
       },
       {
         label: '最高音高 (Hz)',
-        data: data.map((d) => d.max_pitch),
+        data: normalizedData.map((d) => d.max_pitch),
         backgroundColor: 'rgba(245, 158, 11, 0.6)',
         borderColor: '#F59E0B',
         borderWidth: 1,
