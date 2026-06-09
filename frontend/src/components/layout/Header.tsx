@@ -7,6 +7,7 @@ import {
   BarChart3,
   Home,
   DollarSign,
+  LayoutGrid,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/calculator', label: '音高计算器', icon: Calculator },
   { to: '/listener', label: '虚拟试听器', icon: Headphones },
   { to: '/archive', label: '作品归档', icon: Archive },
+  { to: '/work-orders', label: '工单看板', icon: LayoutGrid },
   { to: '/statistics', label: '统计分析', icon: BarChart3 },
   { to: '/cost-statistics', label: '报价统计', icon: DollarSign },
 ];

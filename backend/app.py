@@ -3,15 +3,15 @@ from flask_cors import CORS
 
 from config import Config
 from utils.database import db
-from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp, cost_bp
-from models import Material, WindChime, TuningCorrection
+from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp, cost_bp, work_orders_bp
+from models import Material, WindChime, TuningCorrection, WorkOrder
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:9201"}})
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:9201", "http://localhost:9202", "http://localhost:9203", "http://localhost:9204"]}})
 
     db.init_app(app)
 
@@ -24,6 +24,7 @@ def create_app():
     app.register_blueprint(chimes_bp)
     app.register_blueprint(statistics_bp)
     app.register_blueprint(cost_bp)
+    app.register_blueprint(work_orders_bp)
 
     @app.route("/api/health")
     def health_check():

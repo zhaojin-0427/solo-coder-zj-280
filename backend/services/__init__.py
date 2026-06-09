@@ -4,6 +4,7 @@ from .chord_service import ChordService
 from .chime_service import ChimeService
 from .statistics_service import StatisticsService
 from .cost_service import CostService
+from .work_order_service import WorkOrderService
 
 __all__ = [
     "MaterialService",
@@ -12,4 +13,5 @@ __all__ = [
     "ChimeService",
     "StatisticsService",
     "CostService",
+    "WorkOrderService",
 ]

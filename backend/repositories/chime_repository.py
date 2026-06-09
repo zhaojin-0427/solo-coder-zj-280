@@ -30,7 +30,7 @@ class ChimeRepository(BaseRepository[WindChime]):
             .where(WindChime.id == chime_id)
         )
         result = self.db_session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().unique().one_or_none()
 
     def get_all_material_ids(self) -> List[str]:
         stmt = select(WindChime.materials)

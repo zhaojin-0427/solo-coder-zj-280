@@ -15,12 +15,19 @@ import {
   CostCalculationResult,
   CostSnapshot,
   CostStatistics,
+  WorkOrder,
+  WorkOrderStatistics,
+  CreateWorkOrderData,
+  UpdateWorkOrderData,
+  WorkOrderStage,
+  WindChimeWithWorkOrder,
 } from '../types';
 import { materialService } from '../services/materialService';
 import { calculatorService } from '../services/calculatorService';
 import { chimeService } from '../services/chimeService';
 import { statisticsService } from '../services/statisticsService';
 import { costService } from '../services/costService';
+import { workOrderService, WorkOrderFilterParams } from '../services/workOrderService';
 import { playNote, playChord, playWindChimeEffect, resumeAudioContext } from '../utils/audioUtils';
 import { filterMaterials } from '../utils/materialUtils';
 
@@ -67,6 +74,15 @@ interface AppState {
     profit_rate?: number;
   };
 
+  workOrders: WorkOrder[];
+  workOrdersLoading: boolean;
+  workOrderStatistics: WorkOrderStatistics | null;
+  workOrderStatisticsLoading: boolean;
+  chimesWithWorkOrderStatus: WindChimeWithWorkOrder[];
+  chimesWithWorkOrderStatusLoading: boolean;
+  workOrderFilter: WorkOrderFilterParams;
+  currentWorkOrder: WorkOrder | null;
+
   get isLoading(): boolean;
   get filteredMaterials(): Material[];
 
@@ -107,6 +123,18 @@ interface AppState {
   clearCostCalculation: () => void;
   fetchCostStatistics: () => Promise<void>;
   createCostSnapshot: (materialIds: string[]) => Promise<CostSnapshot | null>;
+
+  fetchWorkOrders: (params?: WorkOrderFilterParams) => Promise<void>;
+  fetchWorkOrderById: (id: string) => Promise<void>;
+  createWorkOrder: (data: CreateWorkOrderData) => Promise<WorkOrder>;
+  updateWorkOrder: (id: string, data: UpdateWorkOrderData) => Promise<void>;
+  updateWorkOrderStatus: (id: string, status: string) => Promise<void>;
+  updateWorkOrderStage: (id: string, stage: WorkOrderStage, completed: boolean) => Promise<void>;
+  deleteWorkOrder: (id: string) => Promise<void>;
+  fetchWorkOrderStatistics: () => Promise<void>;
+  fetchChimesWithWorkOrderStatus: () => Promise<void>;
+  setWorkOrderFilter: (filter: Partial<WorkOrderFilterParams>) => void;
+  setCurrentWorkOrder: (order: WorkOrder | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -171,8 +199,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   costStatisticsLoading: false,
   costParams: {},
 
+  workOrders: [],
+  workOrdersLoading: false,
+  workOrderStatistics: null,
+  workOrderStatisticsLoading: false,
+  chimesWithWorkOrderStatus: [],
+  chimesWithWorkOrderStatusLoading: false,
+  workOrderFilter: {},
+  currentWorkOrder: null,
+
   get isLoading() {
-    return get().materialsLoading || get().calculatorLoading || get().chimesLoading || get().statisticsLoading || get().costCalculationLoading || get().costStatisticsLoading;
+    return get().materialsLoading || get().calculatorLoading || get().chimesLoading || get().statisticsLoading || get().costCalculationLoading || get().costStatisticsLoading || get().workOrdersLoading || get().workOrderStatisticsLoading || get().chimesWithWorkOrderStatusLoading;
   },
 
   get filteredMaterials() {
@@ -623,5 +660,126 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.error('Failed to create cost snapshot:', error);
       return null;
     }
+  },
+
+  fetchWorkOrders: async (params?) => {
+    set({ workOrdersLoading: true });
+    try {
+      const filter = params || get().workOrderFilter;
+      const response = await workOrderService.getAll(filter);
+      set({ workOrders: response.data });
+    } catch (error) {
+      console.error('Failed to fetch work orders:', error);
+    } finally {
+      set({ workOrdersLoading: false });
+    }
+  },
+
+  fetchWorkOrderById: async (id: string) => {
+    try {
+      const order = await workOrderService.getById(id);
+      set({ currentWorkOrder: order });
+    } catch (error) {
+      console.error('Failed to fetch work order:', error);
+    }
+  },
+
+  createWorkOrder: async (data) => {
+    try {
+      const newOrder = await workOrderService.create(data);
+      set((state) => ({
+        workOrders: [newOrder, ...state.workOrders],
+      }));
+      return newOrder;
+    } catch (error) {
+      console.error('Failed to create work order:', error);
+      throw error;
+    }
+  },
+
+  updateWorkOrder: async (id: string, data) => {
+    try {
+      const updated = await workOrderService.update(id, data);
+      set((state) => ({
+        workOrders: state.workOrders.map((o) => (o.id === id ? updated : o)),
+        currentWorkOrder: state.currentWorkOrder?.id === id ? updated : state.currentWorkOrder,
+      }));
+    } catch (error) {
+      console.error('Failed to update work order:', error);
+      throw error;
+    }
+  },
+
+  updateWorkOrderStatus: async (id: string, status: string) => {
+    try {
+      const updated = await workOrderService.updateStatus(id, status);
+      set((state) => ({
+        workOrders: state.workOrders.map((o) => (o.id === id ? updated : o)),
+        currentWorkOrder: state.currentWorkOrder?.id === id ? updated : state.currentWorkOrder,
+      }));
+    } catch (error) {
+      console.error('Failed to update work order status:', error);
+      throw error;
+    }
+  },
+
+  updateWorkOrderStage: async (id: string, stage, completed: boolean) => {
+    try {
+      const updated = await workOrderService.updateStage(id, stage, completed);
+      set((state) => ({
+        workOrders: state.workOrders.map((o) => (o.id === id ? updated : o)),
+        currentWorkOrder: state.currentWorkOrder?.id === id ? updated : state.currentWorkOrder,
+      }));
+    } catch (error) {
+      console.error('Failed to update work order stage:', error);
+      throw error;
+    }
+  },
+
+  deleteWorkOrder: async (id: string) => {
+    try {
+      await workOrderService.delete(id);
+      set((state) => ({
+        workOrders: state.workOrders.filter((o) => o.id !== id),
+        currentWorkOrder: state.currentWorkOrder?.id === id ? null : state.currentWorkOrder,
+      }));
+    } catch (error) {
+      console.error('Failed to delete work order:', error);
+      throw error;
+    }
+  },
+
+  fetchWorkOrderStatistics: async () => {
+    set({ workOrderStatisticsLoading: true });
+    try {
+      const stats = await workOrderService.getStatistics();
+      set({ workOrderStatistics: stats });
+    } catch (error) {
+      console.error('Failed to fetch work order statistics:', error);
+    } finally {
+      set({ workOrderStatisticsLoading: false });
+    }
+  },
+
+  fetchChimesWithWorkOrderStatus: async () => {
+    set({ chimesWithWorkOrderStatusLoading: true });
+    try {
+      const response = await workOrderService.getChimesWithWorkOrderStatus();
+      set({ chimesWithWorkOrderStatus: response.data });
+    } catch (error) {
+      console.error('Failed to fetch chimes with work order status:', error);
+    } finally {
+      set({ chimesWithWorkOrderStatusLoading: false });
+    }
+  },
+
+  setWorkOrderFilter: (filter) => {
+    set((state) => ({
+      workOrderFilter: { ...state.workOrderFilter, ...filter },
+    }));
+  },
+
+  setCurrentWorkOrder: (order) => {
+    set({ currentWorkOrder: order });
   },
 }));

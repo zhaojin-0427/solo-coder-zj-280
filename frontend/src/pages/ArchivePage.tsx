@@ -5,19 +5,36 @@ import PageContainer from '../components/layout/PageContainer';
 import ChimeCard from '../components/archive/ChimeCard';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import CreateWorkOrderModal from '../components/workOrders/CreateWorkOrderModal';
 import { useAppStore } from '../store/useAppStore';
-import { WindChime } from '../types';
+import { WindChime, WindChimeWithWorkOrder } from '../types';
 
 const ArchivePage = () => {
   const navigate = useNavigate();
-  const { chimes, isLoading, fetchChimes, deleteChime, loadChimeToEditor, fetchMaterials } = useAppStore();
+  const {
+    chimes,
+    chimesWithWorkOrderStatus,
+    isLoading,
+    fetchChimes,
+    fetchChimesWithWorkOrderStatus,
+    deleteChime,
+    loadChimeToEditor,
+    fetchMaterials,
+    chimesWithWorkOrderStatusLoading,
+  } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedChime, setSelectedChime] = useState<WindChime | null>(null);
 
   useEffect(() => {
-    fetchChimes();
-  }, [fetchChimes]);
+    fetchChimesWithWorkOrderStatus();
+  }, [fetchChimesWithWorkOrderStatus]);
 
-  const filteredChimes = chimes.filter((chime) =>
+  const displayChimes = chimesWithWorkOrderStatus.length > 0
+    ? chimesWithWorkOrderStatus
+    : chimes as WindChimeWithWorkOrder[];
+
+  const filteredChimes = displayChimes.filter((chime) =>
     chime.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (chime.description && chime.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -25,6 +42,7 @@ const ArchivePage = () => {
   const handleDelete = async (id: string | number) => {
     if (window.confirm('确定要删除这个作品吗？此操作不可撤销。')) {
       await deleteChime(String(id));
+      fetchChimesWithWorkOrderStatus();
     }
   };
 
@@ -32,6 +50,17 @@ const ArchivePage = () => {
     await fetchMaterials();
     loadChimeToEditor(chime);
     navigate('/listener');
+  };
+
+  const handleCreateWorkOrder = (chime: WindChime) => {
+    setSelectedChime(chime);
+    setShowCreateModal(true);
+  };
+
+  const handleViewWorkOrder = (chime: WindChimeWithWorkOrder) => {
+    if (chime.latest_work_order) {
+      navigate(`/work-orders/${chime.latest_work_order.id}`);
+    }
   };
 
   return (
@@ -51,7 +80,7 @@ const ArchivePage = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {(isLoading || chimesWithWorkOrderStatusLoading) ? (
         <div className="text-center py-16">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-gray-500">加载中...</p>
@@ -77,7 +106,7 @@ const ArchivePage = () => {
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-6">
-            共 {chimes.length} 个作品 · {filteredChimes.length} 个符合搜索条件
+            共 {displayChimes.length} 个作品 · {filteredChimes.length} 个符合搜索条件
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredChimes.map((chime) => (
@@ -86,11 +115,25 @@ const ArchivePage = () => {
                 chime={chime}
                 onLoadToEditor={() => handleLoadToEditor(chime)}
                 onDelete={() => handleDelete(chime.id)}
+                onCreateWorkOrder={() => handleCreateWorkOrder(chime)}
+                onViewWorkOrder={() => handleViewWorkOrder(chime)}
               />
             ))}
           </div>
         </>
       )}
+
+      <CreateWorkOrderModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setSelectedChime(null);
+        }}
+        chime={selectedChime}
+        onSuccess={() => {
+          fetchChimesWithWorkOrderStatus();
+        }}
+      />
     </PageContainer>
   );
 };

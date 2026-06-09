@@ -1,18 +1,41 @@
-import { Calendar, Music, Play, Edit2, Trash2, Sliders } from 'lucide-react';
-import { WindChime, Material } from '../../types';
+import { Calendar, Music, Play, Edit2, Trash2, Sliders, FileText, Plus, AlertTriangle } from 'lucide-react';
+import { WindChime, Material, WindChimeWithWorkOrder, WorkOrderStatus } from '../../types';
 import { MATERIAL_TYPE_INFO } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 
 interface ChimeCardProps {
-  chime: WindChime;
+  chime: WindChime | WindChimeWithWorkOrder;
   onLoadToEditor: () => void;
   onDelete: () => void;
+  onCreateWorkOrder?: () => void;
+  onViewWorkOrder?: () => void;
 }
 
-const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
+const STATUS_COLORS: Record<WorkOrderStatus, string> = {
+  pending_material: 'bg-amber-100 text-amber-700 border-amber-200',
+  in_production: 'bg-blue-100 text-blue-700 border-blue-200',
+  pending_tuning: 'bg-purple-100 text-purple-700 border-purple-200',
+  completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  delivered: 'bg-gray-100 text-gray-700 border-gray-200',
+  cancelled: 'bg-red-100 text-red-700 border-red-200',
+};
+
+const ChimeCard = ({ chime, onLoadToEditor, onDelete, onCreateWorkOrder, onViewWorkOrder }: ChimeCardProps) => {
   const { playChordSound, materials } = useAppStore();
+
+  const hasWorkOrder = 'has_work_order' in chime ? chime.has_work_order : false;
+  const latestWorkOrder = 'latest_work_order' in chime ? chime.latest_work_order : null;
+  const workOrderCount = 'work_order_count' in chime ? chime.work_order_count : 0;
+
+  const isWorkOrderActive = latestWorkOrder &&
+    latestWorkOrder.status !== 'delivered' &&
+    latestWorkOrder.status !== 'cancelled';
+
+  const isOverdue = latestWorkOrder &&
+    isWorkOrderActive &&
+    new Date(latestWorkOrder.delivery_date) < new Date();
 
   const getMaterialById = (id: string) => materials.find((m) => m.id === id);
 
@@ -95,6 +118,27 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
               </span>
             )}
           </div>
+
+          {hasWorkOrder && latestWorkOrder && (
+            <div className="flex items-center gap-1.5 ml-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewWorkOrder?.();
+                }}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border',
+                  STATUS_COLORS[latestWorkOrder.status],
+                  'hover:opacity-80 transition-opacity'
+                )}
+                title={`客户: ${latestWorkOrder.customer_name}`}
+              >
+                <FileText className="w-3 h-3" />
+                {latestWorkOrder.status_display}
+                {isOverdue && <AlertTriangle className="w-3 h-3 ml-1" />}
+              </button>
+            </div>
+          )}
         </div>
 
         {chime.description && (
@@ -149,15 +193,30 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
         )}
 
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={onLoadToEditor}
-          >
-            <Edit2 className="w-4 h-4 mr-1" />
-            编辑
-          </Button>
+          {!hasWorkOrder || !isWorkOrderActive ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateWorkOrder?.();
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              生成工单
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={onLoadToEditor}
+            >
+              <Edit2 className="w-4 h-4 mr-1" />
+              编辑
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -167,6 +226,24 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+
+        {hasWorkOrder && latestWorkOrder && isWorkOrderActive && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between text-xs">
+              <div className="text-gray-500">
+                <span className="font-medium text-gray-700">{latestWorkOrder.customer_name}</span>
+                <span className="mx-1">·</span>
+                <span>交付: {new Date(latestWorkOrder.delivery_date).toLocaleDateString('zh-CN')}</span>
+              </div>
+              {isOverdue && (
+                <span className="text-red-500 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  已逾期
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -49,6 +49,29 @@ CREATE TABLE IF NOT EXISTS tuning_corrections (
 CREATE INDEX idx_corrections_material ON tuning_corrections(material_id);
 CREATE INDEX idx_corrections_chime ON tuning_corrections(chime_id);
 
+-- 工单表
+CREATE TABLE IF NOT EXISTS work_orders (
+    id TEXT PRIMARY KEY,
+    chime_id TEXT NOT NULL REFERENCES wind_chimes(id) ON DELETE CASCADE,
+    customer_name TEXT NOT NULL,
+    delivery_date DATE NOT NULL,
+    priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    status TEXT NOT NULL DEFAULT 'pending_material' CHECK (status IN ('pending_material', 'in_production', 'pending_tuning', 'completed', 'delivered', 'cancelled')),
+    remarks TEXT,
+    materials_snapshot TEXT NOT NULL,
+    cost_snapshot TEXT NOT NULL,
+    tuning_records_snapshot TEXT,
+    stages_completed TEXT NOT NULL,
+    inventory_deducted INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_work_orders_chime ON work_orders(chime_id);
+CREATE INDEX idx_work_orders_status ON work_orders(status);
+CREATE INDEX idx_work_orders_priority ON work_orders(priority);
+CREATE INDEX idx_work_orders_delivery ON work_orders(delivery_date);
+
 -- 初始化示例数据
 INSERT INTO materials (id, material_type, name, length, diameter, wall_thickness, theoretical_pitch, theoretical_note, purchase_price, stock_quantity, loss_rate, supplier) VALUES
 ('mat_001', 'copper', '长铜铃', 180, 25, 1.5, 523.25, 'C5', 85.5, 50, 3.5, '上海铜管厂'),

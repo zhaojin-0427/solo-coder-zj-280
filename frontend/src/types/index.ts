@@ -400,3 +400,95 @@ export interface CreateChimeWithCostData extends CreateChimeData {
 export interface UpdateChimeWithCostData extends UpdateChimeData {
   cost_snapshot?: CostSnapshot;
 }
+
+export type WorkOrderStatus =
+  | 'pending_material'
+  | 'in_production'
+  | 'pending_tuning'
+  | 'completed'
+  | 'delivered'
+  | 'cancelled';
+
+export type WorkOrderPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export type WorkOrderStage =
+  | 'material_prep'
+  | 'production'
+  | 'tuning'
+  | 'packaging';
+
+export interface WorkOrderStageCompletion {
+  completed: boolean;
+  completed_at?: string;
+}
+
+export interface WorkOrder {
+  id: string;
+  chime_id: string;
+  customer_name: string;
+  delivery_date: string;
+  priority: WorkOrderPriority;
+  priority_display: string;
+  status: WorkOrderStatus;
+  status_display: string;
+  remarks?: string;
+  materials_snapshot: Material[];
+  cost_snapshot: CostSnapshot | null;
+  tuning_records_snapshot: TuningCorrection[];
+  stages_completed: Record<WorkOrderStage, WorkOrderStageCompletion>;
+  inventory_deducted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateWorkOrderData {
+  chime_id: string;
+  customer_name: string;
+  delivery_date: string;
+  priority?: WorkOrderPriority;
+  remarks?: string;
+}
+
+export interface UpdateWorkOrderData {
+  customer_name?: string;
+  delivery_date?: string;
+  priority?: WorkOrderPriority;
+  remarks?: string;
+  status?: WorkOrderStatus;
+}
+
+export interface WorkOrderStatistics {
+  total_orders: number;
+  overdue_orders: number;
+  overdue_orders_list: WorkOrder[];
+  status_distribution: Record<WorkOrderStatus, number>;
+  status_distribution_with_names: Record<string, number>;
+  material_occupied: {
+    by_material: Array<{
+      material_id: string;
+      material_name: string;
+      material_type: string;
+      quantity: number;
+      total_value: number;
+    }>;
+    total_orders_with_deducted_inventory: number;
+    total_occupied_value: number;
+  };
+  delivery_trend: Array<{
+    date: string;
+    delivered_count: number;
+  }>;
+}
+
+export interface WindChimeWithWorkOrder extends WindChime {
+  has_work_order: boolean;
+  work_order_count: number;
+  latest_work_order?: {
+    id: string;
+    status: WorkOrderStatus;
+    status_display: string;
+    priority: WorkOrderPriority;
+    customer_name: string;
+    delivery_date: string;
+  };
+}
