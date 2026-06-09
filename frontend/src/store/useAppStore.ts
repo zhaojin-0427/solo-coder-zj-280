@@ -350,7 +350,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (selectedTubes.length === 0) return;
 
     try {
-      const chimeData: CreateChimeData = {
+      const baseData = {
         name,
         description,
         materials: selectedTubes.map((t) => t.id),
@@ -360,14 +360,21 @@ export const useAppStore = create<AppState>((set, get) => ({
           frequencies: selectedTubes.map((t) => t.theoretical_pitch),
           notes: selectedTubes.map((t) => t.theoretical_note),
         },
-        tuning_corrections: tuningCorrections.length > 0 ? tuningCorrections : undefined,
       };
 
       let resultChime: WindChime;
       if (currentChime) {
-        resultChime = await chimeService.update(String(currentChime.id), chimeData as unknown as UpdateChimeData);
+        const updateData: UpdateChimeData = {
+          ...baseData,
+          tuning_corrections: tuningCorrections,
+        };
+        resultChime = await chimeService.update(String(currentChime.id), updateData);
       } else {
-        resultChime = await chimeService.create(chimeData);
+        const createData: CreateChimeData = {
+          ...baseData,
+          tuning_corrections: tuningCorrections.length > 0 ? tuningCorrections : undefined,
+        };
+        resultChime = await chimeService.create(createData);
       }
 
       set((state) => ({

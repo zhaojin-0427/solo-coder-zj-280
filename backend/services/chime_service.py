@@ -27,7 +27,8 @@ class ChimeService:
         tuning_corrections = data.get("tuning_corrections")
         if tuning_corrections:
             for tc in tuning_corrections:
-                self.repository.add_tuning_correction(chime.id, tc.model_dump())
+                tc_dict = tc.model_dump() if hasattr(tc, "model_dump") else tc
+                self.repository.add_tuning_correction(chime.id, tc_dict)
 
         db.session.commit()
         return chime

@@ -149,6 +149,7 @@ export interface UpdateChimeData {
     frequencies: number[];
     notes: string[];
   };
+  tuning_corrections?: TuningCorrection[];
 }
 
 export interface MaterialFilter {

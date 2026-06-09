@@ -1,5 +1,6 @@
 from typing import List, Optional
 from sqlalchemy import select, func, text
+from sqlalchemy.orm import joinedload
 from .base_repository import BaseRepository
 from models.chime import WindChime
 from models.tuning_correction import TuningCorrection
@@ -12,9 +13,24 @@ class ChimeRepository(BaseRepository[WindChime]):
         super().__init__(WindChime, db.session)
 
     def get_all_with_timestamps(self, skip: int = 0, limit: int = 100) -> List[WindChime]:
-        stmt = select(WindChime).order_by(WindChime.created_at.desc()).offset(skip).limit(limit)
+        stmt = (
+            select(WindChime)
+            .options(joinedload(WindChime.tuning_corrections))
+            .order_by(WindChime.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
         result = self.db_session.execute(stmt)
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
+
+    def get_by_id(self, chime_id: str) -> Optional[WindChime]:
+        stmt = (
+            select(WindChime)
+            .options(joinedload(WindChime.tuning_corrections))
+            .where(WindChime.id == chime_id)
+        )
+        result = self.db_session.execute(stmt)
+        return result.scalar_one_or_none()
 
     def get_all_material_ids(self) -> List[str]:
         stmt = select(WindChime.materials)

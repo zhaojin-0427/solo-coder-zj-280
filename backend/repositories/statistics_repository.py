@@ -12,6 +12,7 @@ class StatisticsRepository:
     def __init__(self):
         self.material_repo = MaterialRepository()
         self.chime_repo = ChimeRepository()
+        self.db_session = db.session
 
     def get_overview(self) -> Dict:
         total_materials = self.material_repo.count()
