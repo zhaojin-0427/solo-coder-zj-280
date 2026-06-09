@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   BarChart3,
   Package,
@@ -28,17 +28,17 @@ const StatisticsPage = () => {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     await Promise.all([
       fetchStatistics(),
       fetchMaterials(),
       fetchChimes(),
     ]);
-  };
+  }, [fetchStatistics, fetchMaterials, fetchChimes]);
+
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

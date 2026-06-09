@@ -3,7 +3,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Volume2 } from 'lucide-react';
 import { Material } from '../../types';
 import { getMaterialGradient } from '../../utils/materialUtils';
-import { getNoteColor } from '../../utils/pitchUtils';
 import { MATERIAL_TYPE_INFO } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { cn } from '../../lib/utils';

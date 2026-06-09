@@ -3,7 +3,7 @@ from flask_cors import CORS
 
 from config import Config
 from utils.database import db
-from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp
+from controllers import materials_bp, calculator_bp, chimes_bp, statistics_bp, cost_bp
 from models import Material, WindChime, TuningCorrection
 
 
@@ -23,6 +23,7 @@ def create_app():
     app.register_blueprint(calculator_bp)
     app.register_blueprint(chimes_bp)
     app.register_blueprint(statistics_bp)
+    app.register_blueprint(cost_bp)
 
     @app.route("/api/health")
     def health_check():
@@ -53,7 +54,11 @@ def init_seed_data():
             "diameter": 25.0,
             "wall_thickness": 1.5,
             "theoretical_pitch": 523.25,
-            "theoretical_note": "C5"
+            "theoretical_note": "C5",
+            "purchase_price": 85.5,
+            "stock_quantity": 50,
+            "loss_rate": 3.5,
+            "supplier": "上海铜管厂"
         },
         {
             "id": "mat_002",
@@ -63,7 +68,11 @@ def init_seed_data():
             "diameter": 20.0,
             "wall_thickness": 1.0,
             "theoretical_pitch": 659.25,
-            "theoretical_note": "E5"
+            "theoretical_note": "E5",
+            "purchase_price": 45.0,
+            "stock_quantity": 80,
+            "loss_rate": 2.0,
+            "supplier": "广州铝材有限公司"
         },
         {
             "id": "mat_003",
@@ -73,7 +82,11 @@ def init_seed_data():
             "diameter": 22.0,
             "wall_thickness": 2.0,
             "theoretical_pitch": 783.99,
-            "theoretical_note": "G5"
+            "theoretical_note": "G5",
+            "purchase_price": 28.0,
+            "stock_quantity": 120,
+            "loss_rate": 5.0,
+            "supplier": "安吉竹制品厂"
         },
         {
             "id": "mat_004",
@@ -83,7 +96,11 @@ def init_seed_data():
             "diameter": 18.0,
             "wall_thickness": 3.0,
             "theoretical_pitch": 1046.50,
-            "theoretical_note": "C6"
+            "theoretical_note": "C6",
+            "purchase_price": 120.0,
+            "stock_quantity": 30,
+            "loss_rate": 8.0,
+            "supplier": "淄博玻璃工艺厂"
         },
         {
             "id": "mat_005",
@@ -93,7 +110,11 @@ def init_seed_data():
             "diameter": 30.0,
             "wall_thickness": 2.0,
             "theoretical_pitch": 392.00,
-            "theoretical_note": "G4"
+            "theoretical_note": "G4",
+            "purchase_price": 150.0,
+            "stock_quantity": 25,
+            "loss_rate": 4.0,
+            "supplier": "上海铜管厂"
         }
     ]
 

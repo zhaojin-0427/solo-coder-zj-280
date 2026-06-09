@@ -19,6 +19,7 @@ import PageContainer from '../components/layout/PageContainer';
 import ChimeTube from '../components/listener/ChimeTube';
 import ChordInfoDisplay from '../components/listener/ChordInfoDisplay';
 import TuningPanel from '../components/listener/TuningPanel';
+import CostPanel from '../components/listener/CostPanel';
 import MaterialCard from '../components/materials/MaterialCard';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
@@ -34,6 +35,9 @@ const ListenerPage = () => {
     chordAnalysis,
     currentChime,
     tuningCorrections,
+    costCalculation,
+    costCalculationLoading,
+    costParams,
     fetchMaterials,
     addTubeToChime,
     reorderTubes,
@@ -44,6 +48,8 @@ const ListenerPage = () => {
     setTuningCorrection,
     removeTuningCorrection,
     clearTuningCorrections,
+    calculateCost,
+    setCostParams,
   } = useAppStore();
 
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
@@ -74,6 +80,19 @@ const ListenerPage = () => {
         </span>
       ),
     },
+    {
+      key: 'cost',
+      label: (
+        <span className="flex items-center gap-1">
+          成本报价
+          {costCalculation && (
+            <span className="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded-full">
+              ¥{costCalculation.suggested_price.toFixed(0)}
+            </span>
+          )}
+        </span>
+      ),
+    },
   ];
 
   const sensors = useSensors(
@@ -96,6 +115,12 @@ const ListenerPage = () => {
       analyzeChord();
     }
   }, [chimeTubes, analyzeChord]);
+
+  useEffect(() => {
+    if (chimeTubes.length > 0) {
+      calculateCost();
+    }
+  }, [chimeTubes, calculateCost]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -262,6 +287,18 @@ const ListenerPage = () => {
                 onUpdateCorrection={setTuningCorrection}
                 onRemoveCorrection={removeTuningCorrection}
                 onClearAll={clearTuningCorrections}
+              />
+            </TabPanel>
+            <TabPanel tabKey="cost" activeTab={activeTab}>
+              <CostPanel
+                costCalculation={costCalculation}
+                isLoading={costCalculationLoading}
+                onRecalculate={() => calculateCost()}
+                onParamsChange={setCostParams}
+                labor_hours={costParams.labor_hours}
+                labor_rate={costParams.labor_rate}
+                overhead_rate={costParams.overhead_rate}
+                profit_rate={costParams.profit_rate}
               />
             </TabPanel>
           </Tabs>

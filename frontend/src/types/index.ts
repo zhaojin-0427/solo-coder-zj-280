@@ -9,6 +9,10 @@ export interface Material {
   wall_thickness: number;
   theoretical_pitch: number;
   theoretical_note: string;
+  purchase_price: number;
+  stock_quantity: number;
+  loss_rate: number;
+  supplier: string;
   created_at: string;
   updated_at: string;
 }
@@ -104,6 +108,7 @@ export interface WindChime {
     dissonance_score?: number;
   };
   tuning_corrections?: TuningCorrection[];
+  cost_snapshot: CostSnapshot | null;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +119,10 @@ export interface CreateMaterialData {
   length: number;
   diameter: number;
   wall_thickness: number;
+  purchase_price?: number;
+  stock_quantity?: number;
+  loss_rate?: number;
+  supplier?: string;
 }
 
 export interface UpdateMaterialData {
@@ -124,6 +133,10 @@ export interface UpdateMaterialData {
   wall_thickness?: number;
   theoretical_pitch?: number;
   theoretical_note?: string;
+  purchase_price?: number;
+  stock_quantity?: number;
+  loss_rate?: number;
+  supplier?: string;
 }
 
 export interface CreateChimeData {
@@ -276,3 +289,114 @@ export const MATERIAL_TYPE_INFO: Record<MaterialType, MaterialTypeInfo> = {
     decay_rate: 0.9,
   },
 };
+
+export interface MaterialCostItem {
+  material_id: string;
+  material_name: string;
+  material_type: string;
+  purchase_price: number;
+  length: number;
+  loss_rate: number;
+  supplier?: string;
+  material_cost: number;
+  loss_cost: number;
+  subtotal: number;
+}
+
+export interface CostCalculationResult {
+  material_ids: string[];
+  material_costs: MaterialCostItem[];
+  total_material_cost: number;
+  total_loss_cost: number;
+  labor_hours: number;
+  labor_cost: number;
+  labor_rate: number;
+  overhead_rate: number;
+  overhead_cost: number;
+  total_cost: number;
+  suggested_price: number;
+  profit_margin: number;
+  profit_rate: number;
+}
+
+export interface CostSnapshot {
+  material_costs: MaterialCostItem[];
+  total_material_cost: number;
+  total_loss_cost: number;
+  labor_hours: number;
+  labor_cost: number;
+  labor_rate: number;
+  overhead_rate: number;
+  overhead_cost: number;
+  total_cost: number;
+  suggested_price: number;
+  profit_margin: number;
+  profit_rate: number;
+  calculated_at: string;
+}
+
+export interface CostCalculateRequest {
+  material_ids: string[];
+  labor_hours?: number;
+  labor_rate?: number;
+  overhead_rate?: number;
+  profit_rate?: number;
+}
+
+export interface WindChimeWithCost extends WindChime {
+  cost_snapshot: CostSnapshot | null;
+}
+
+export interface MaterialCostByType {
+  material_type: string;
+  total_cost: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ChimeProfitRankItem {
+  chime_id: string;
+  chime_name: string;
+  total_cost: number;
+  suggested_price: number;
+  profit_margin: number;
+  profit_rate: number;
+  material_count: number;
+  created_at: string;
+}
+
+export interface SupplierUsageItem {
+  supplier: string;
+  material_count: number;
+  total_cost: number;
+  used_count: number;
+  material_types: string[];
+}
+
+export interface HighLossMaterialItem {
+  material_id: string;
+  material_name: string;
+  material_type: string;
+  loss_rate: number;
+  purchase_price: number;
+  supplier?: string;
+  stock_quantity: number;
+  risk_level: 'low' | 'medium' | 'high';
+}
+
+export interface CostStatistics {
+  cost_by_material_type: MaterialCostByType[];
+  profit_ranking: ChimeProfitRankItem[];
+  supplier_usage: SupplierUsageItem[];
+  high_loss_materials: HighLossMaterialItem[];
+  total_inventory_value: number;
+  avg_profit_rate: number;
+}
+
+export interface CreateChimeWithCostData extends CreateChimeData {
+  cost_snapshot?: CostSnapshot;
+}
+
+export interface UpdateChimeWithCostData extends UpdateChimeData {
+  cost_snapshot?: CostSnapshot;
+}

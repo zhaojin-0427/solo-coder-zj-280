@@ -20,9 +20,14 @@ const MaterialForm = ({ material, onSubmit, onCancel, isLoading }: MaterialFormP
     length: material?.length || 180,
     diameter: material?.diameter || 25,
     wall_thickness: material?.wall_thickness || 1.5,
+    purchase_price: material?.purchase_price ?? 0,
+    stock_quantity: material?.stock_quantity ?? 0,
+    loss_rate: material?.loss_rate ?? 0,
+    supplier: material?.supplier || '',
   });
   const [previewPitch, setPreviewPitch] = useState<{ note: string; frequency: number } | null>(null);
   const [calculating, setCalculating] = useState(false);
+  const [showCostFields, setShowCostFields] = useState(true);
 
   useEffect(() => {
     const calculatePreview = async () => {
@@ -122,6 +127,61 @@ const MaterialForm = ({ material, onSubmit, onCancel, isLoading }: MaterialFormP
           </div>
         </div>
       )}
+
+      <div className="border-t border-gray-200 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowCostFields(!showCostFields)}
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors mb-3"
+        >
+          <span className="font-medium">💰 成本信息</span>
+          <span className="text-gray-400">{showCostFields ? '▼' : '▶'}</span>
+        </button>
+
+        {showCostFields && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Input
+                label="采购单价 (元)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.purchase_price}
+                onChange={(e) => setFormData({ ...formData, purchase_price: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Input
+                label="库存数量"
+                type="number"
+                min="0"
+                step="1"
+                value={formData.stock_quantity}
+                onChange={(e) => setFormData({ ...formData, stock_quantity: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Input
+                label="损耗率 (%)"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={formData.loss_rate}
+                onChange={(e) => setFormData({ ...formData, loss_rate: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Input
+                label="供应商"
+                placeholder="供应商名称"
+                value={formData.supplier}
+                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>

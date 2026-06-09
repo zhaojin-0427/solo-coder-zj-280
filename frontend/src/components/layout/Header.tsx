@@ -6,6 +6,7 @@ import {
   Archive,
   BarChart3,
   Home,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/listener', label: '虚拟试听器', icon: Headphones },
   { to: '/archive', label: '作品归档', icon: Archive },
   { to: '/statistics', label: '统计分析', icon: BarChart3 },
+  { to: '/cost-statistics', label: '报价统计', icon: DollarSign },
 ];
 
 const Header = () => {

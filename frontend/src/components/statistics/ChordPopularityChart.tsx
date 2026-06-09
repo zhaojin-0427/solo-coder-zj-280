@@ -65,10 +65,11 @@ const ChordPopularityChart = ({ data }: ChordPopularityChartProps) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = ((context.raw / total) * 100).toFixed(1);
-            return `${context.label}: ${context.raw} 次 (${percentage}%)`;
+          label: function(context) {
+            const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
+            const rawValue = context.raw as number;
+            const percentage = ((rawValue / total) * 100).toFixed(1);
+            return `${context.label}: ${rawValue} 次 (${percentage}%)`;
           }
         }
       }

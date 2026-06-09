@@ -19,3 +19,6 @@ class StatisticsService:
 
     def get_tuning_corrections(self):
         return self.repository.get_tuning_corrections()
+
+    def get_cost_statistics(self):
+        return self.repository.get_cost_statistics()

@@ -9,6 +9,10 @@ class MaterialCreate(BaseModel):
     length: float = Field(..., gt=0, lt=1000)
     diameter: float = Field(..., gt=0, lt=100)
     wall_thickness: float = Field(..., gt=0, lt=20)
+    purchase_price: Optional[float] = Field(0.0, ge=0)
+    stock_quantity: Optional[int] = Field(0, ge=0)
+    loss_rate: Optional[float] = Field(0.0, ge=0, le=100)
+    supplier: Optional[str] = Field(None, max_length=200)
 
     @field_validator("material_type")
     def validate_material_type(cls, v):
@@ -26,6 +30,10 @@ class MaterialUpdate(BaseModel):
     wall_thickness: Optional[float] = Field(None, gt=0, lt=20)
     theoretical_pitch: Optional[float] = None
     theoretical_note: Optional[str] = None
+    purchase_price: Optional[float] = Field(None, ge=0)
+    stock_quantity: Optional[int] = Field(None, ge=0)
+    loss_rate: Optional[float] = Field(None, ge=0, le=100)
+    supplier: Optional[str] = Field(None, max_length=200)
 
     @field_validator("material_type")
     def validate_material_type(cls, v):

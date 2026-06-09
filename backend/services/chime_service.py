@@ -1,12 +1,14 @@
 import json
 from typing import List, Optional
 from repositories.chime_repository import ChimeRepository
+from services.cost_service import CostService
 from utils.database import db
 
 
 class ChimeService:
     def __init__(self):
         self.repository = ChimeRepository()
+        self.cost_service = CostService()
 
     def get_all(self, skip: int = 0, limit: int = 100) -> List:
         return self.repository.get_all_with_timestamps(skip=skip, limit=limit)
@@ -22,6 +24,18 @@ class ChimeService:
             "hang_order": json.dumps(data.get("hang_order", [])),
             "chord_info": json.dumps(data.get("chord_info", {}))
         }
+
+        cost_snapshot = data.get("cost_snapshot")
+        if cost_snapshot:
+            if hasattr(cost_snapshot, "model_dump"):
+                chime_data["cost_snapshot"] = json.dumps(cost_snapshot.model_dump())
+            else:
+                chime_data["cost_snapshot"] = json.dumps(cost_snapshot)
+        elif data["materials"]:
+            cost_result = self.cost_service.calculate_cost(data["materials"])
+            snapshot = self.cost_service.create_snapshot(cost_result)
+            chime_data["cost_snapshot"] = json.dumps(self.cost_service.snapshot_to_dict(snapshot))
+
         chime = self.repository.create(chime_data)
 
         tuning_corrections = data.get("tuning_corrections")
@@ -49,6 +63,17 @@ class ChimeService:
             update_data["hang_order"] = json.dumps(data["hang_order"])
         if "chord_info" in data:
             update_data["chord_info"] = json.dumps(data["chord_info"])
+
+        if "cost_snapshot" in data and data["cost_snapshot"] is not None:
+            cost_snapshot = data["cost_snapshot"]
+            if hasattr(cost_snapshot, "model_dump"):
+                update_data["cost_snapshot"] = json.dumps(cost_snapshot.model_dump())
+            else:
+                update_data["cost_snapshot"] = json.dumps(cost_snapshot)
+        elif "materials" in data and data["materials"]:
+            cost_result = self.cost_service.calculate_cost(data["materials"])
+            snapshot = self.cost_service.create_snapshot(cost_result)
+            update_data["cost_snapshot"] = json.dumps(self.cost_service.snapshot_to_dict(snapshot))
 
         updated = self.repository.update(chime, update_data)
 

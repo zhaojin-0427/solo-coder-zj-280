@@ -1,5 +1,5 @@
-import { Calendar, Music, Play, Edit2, Trash2, Download, Sliders } from 'lucide-react';
-import { WindChime, Material, MaterialType } from '../../types';
+import { Calendar, Music, Play, Edit2, Trash2, Sliders } from 'lucide-react';
+import { WindChime, Material } from '../../types';
 import { MATERIAL_TYPE_INFO } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import Button from '../ui/Button';
@@ -112,7 +112,7 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {getMaterialTypes().map((type) => (
             <span
               key={type}
@@ -122,6 +122,31 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
             </span>
           ))}
         </div>
+
+        {chime.cost_snapshot && (
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-3 mb-4 border border-emerald-100">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-[10px] text-emerald-600 mb-0.5">总成本</p>
+                <p className="text-sm font-bold text-emerald-700">
+                  ¥{chime.cost_snapshot.total_cost.toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-teal-600 mb-0.5">建议售价</p>
+                <p className="text-sm font-bold text-teal-700">
+                  ¥{chime.cost_snapshot.suggested_price.toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-emerald-600 mb-0.5">毛利率</p>
+                <p className="text-sm font-bold text-emerald-700">
+                  {(chime.cost_snapshot.profit_rate * 100).toFixed(0)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Button

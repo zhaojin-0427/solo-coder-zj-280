@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calculator, Play, Volume2 } from 'lucide-react';
+import { Calculator, Volume2 } from 'lucide-react';
 import PageContainer from '../components/layout/PageContainer';
 import PitchDisplay from '../components/calculator/PitchDisplay';
 import Input from '../components/ui/Input';

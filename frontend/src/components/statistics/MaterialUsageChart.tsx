@@ -69,9 +69,10 @@ const MaterialUsageChart = ({ data }: MaterialUsageChartProps) => {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function(context) {
             const item = data[context.dataIndex];
-            return `${context.label}: ${context.raw.toFixed(1)}% (${item.used_count}/${item.total_count})`;
+            const rawValue = context.raw as number;
+            return `${context.label}: ${rawValue.toFixed(1)}% (${item.used_count}/${item.total_count})`;
           }
         }
       }

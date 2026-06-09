@@ -1,4 +1,4 @@
-import { Music, Sparkles, AlertTriangle, Info } from 'lucide-react';
+import { Music, Sparkles, Info } from 'lucide-react';
 import { ChordAnalysis } from '../../types';
 import { cn } from '../../lib/utils';
 

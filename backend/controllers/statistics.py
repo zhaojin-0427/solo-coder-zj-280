@@ -29,3 +29,8 @@ def get_material_usage():
 @statistics_bp.route("/tuning-corrections", methods=["GET"])
 def get_tuning_corrections():
     return jsonify(statistics_service.get_tuning_corrections())
+
+
+@statistics_bp.route("/cost", methods=["GET"])
+def get_cost_statistics():
+    return jsonify(statistics_service.get_cost_statistics())

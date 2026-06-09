@@ -6,6 +6,7 @@ import CalculatorPage from './pages/CalculatorPage';
 import ListenerPage from './pages/ListenerPage';
 import ArchivePage from './pages/ArchivePage';
 import StatisticsPage from './pages/StatisticsPage';
+import CostStatisticsPage from './pages/CostStatisticsPage';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/listener" element={<ListenerPage />} />
             <Route path="/archive" element={<ArchivePage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/cost-statistics" element={<CostStatisticsPage />} />
           </Routes>
         </main>
       </div>

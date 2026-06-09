@@ -12,11 +12,15 @@ import {
   MaterialType,
   StatisticsData,
   TuningCorrection,
+  CostCalculationResult,
+  CostSnapshot,
+  CostStatistics,
 } from '../types';
 import { materialService } from '../services/materialService';
 import { calculatorService } from '../services/calculatorService';
 import { chimeService } from '../services/chimeService';
 import { statisticsService } from '../services/statisticsService';
+import { costService } from '../services/costService';
 import { playNote, playChord, playWindChimeEffect, resumeAudioContext } from '../utils/audioUtils';
 import { filterMaterials } from '../utils/materialUtils';
 
@@ -52,6 +56,17 @@ interface AppState {
   statistics: StatisticsData;
   statisticsLoading: boolean;
 
+  costCalculation: CostCalculationResult | null;
+  costCalculationLoading: boolean;
+  costStatistics: CostStatistics | null;
+  costStatisticsLoading: boolean;
+  costParams: {
+    labor_hours?: number;
+    labor_rate?: number;
+    overhead_rate?: number;
+    profit_rate?: number;
+  };
+
   get isLoading(): boolean;
   get filteredMaterials(): Material[];
 
@@ -86,6 +101,12 @@ interface AppState {
   clearTuningCorrections: () => void;
 
   fetchStatistics: () => Promise<void>;
+
+  calculateCost: (materialIds?: string[]) => Promise<void>;
+  setCostParams: (params: Partial<AppState['costParams']>) => void;
+  clearCostCalculation: () => void;
+  fetchCostStatistics: () => Promise<void>;
+  createCostSnapshot: (materialIds: string[]) => Promise<CostSnapshot | null>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -144,8 +165,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   statisticsLoading: false,
 
+  costCalculation: null,
+  costCalculationLoading: false,
+  costStatistics: null,
+  costStatisticsLoading: false,
+  costParams: {},
+
   get isLoading() {
-    return get().materialsLoading || get().calculatorLoading || get().chimesLoading || get().statisticsLoading;
+    return get().materialsLoading || get().calculatorLoading || get().chimesLoading || get().statisticsLoading || get().costCalculationLoading || get().costStatisticsLoading;
   },
 
   get filteredMaterials() {
@@ -342,14 +369,36 @@ export const useAppStore = create<AppState>((set, get) => ({
       chordAnalysis: null,
       tuningCorrections: [],
       currentChime: null,
+      costCalculation: null,
     });
   },
 
   saveChime: async (name, description = '') => {
-    const { selectedTubes, hangOrder, chordAnalysis, tuningCorrections, currentChime } = get();
+    const { selectedTubes, hangOrder, chordAnalysis, tuningCorrections, currentChime, costCalculation, createCostSnapshot } = get();
     if (selectedTubes.length === 0) return;
 
     try {
+      let costSnapshot = null;
+      if (costCalculation) {
+        costSnapshot = {
+          material_costs: costCalculation.material_costs,
+          total_material_cost: costCalculation.total_material_cost,
+          total_loss_cost: costCalculation.total_loss_cost,
+          labor_hours: costCalculation.labor_hours,
+          labor_cost: costCalculation.labor_cost,
+          labor_rate: costCalculation.labor_rate,
+          overhead_rate: costCalculation.overhead_rate,
+          overhead_cost: costCalculation.overhead_cost,
+          total_cost: costCalculation.total_cost,
+          suggested_price: costCalculation.suggested_price,
+          profit_margin: costCalculation.profit_margin,
+          profit_rate: costCalculation.profit_rate,
+          calculated_at: new Date().toISOString(),
+        };
+      } else {
+        costSnapshot = await createCostSnapshot(selectedTubes.map((t) => t.id));
+      }
+
       const baseData = {
         name,
         description,
@@ -360,6 +409,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           frequencies: selectedTubes.map((t) => t.theoretical_pitch),
           notes: selectedTubes.map((t) => t.theoretical_note),
         },
+        cost_snapshot: costSnapshot || undefined,
       };
 
       let resultChime: WindChime;
@@ -415,7 +465,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadChimeToEditor: (chime) => {
-    const { materials } = get();
+    const { materials, calculateCost } = get();
     const tubeMaterials = chime.materials
       .map((mat) => {
         if (typeof mat === 'string') {
@@ -435,6 +485,25 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const finalMaterials = [...sortedMaterials, ...remainingMaterials];
 
+    let costCalculation = null;
+    if (chime.cost_snapshot) {
+      costCalculation = {
+        material_ids: finalMaterials.map((m) => m.id),
+        material_costs: chime.cost_snapshot.material_costs,
+        total_material_cost: chime.cost_snapshot.total_material_cost,
+        total_loss_cost: chime.cost_snapshot.total_loss_cost,
+        labor_hours: chime.cost_snapshot.labor_hours,
+        labor_cost: chime.cost_snapshot.labor_cost,
+        labor_rate: chime.cost_snapshot.labor_rate,
+        overhead_rate: chime.cost_snapshot.overhead_rate,
+        overhead_cost: chime.cost_snapshot.overhead_cost,
+        total_cost: chime.cost_snapshot.total_cost,
+        suggested_price: chime.cost_snapshot.suggested_price,
+        profit_margin: chime.cost_snapshot.profit_margin,
+        profit_rate: chime.cost_snapshot.profit_rate,
+      };
+    }
+
     set({
       selectedTubes: finalMaterials,
       chimeTubes: finalMaterials,
@@ -450,7 +519,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         : null,
       tuningCorrections: chime.tuning_corrections || [],
       currentChime: chime,
+      costCalculation,
     });
+
+    if (!chime.cost_snapshot && finalMaterials.length > 0) {
+      setTimeout(() => {
+        calculateCost(finalMaterials.map((m) => m.id));
+      }, 100);
+    }
   },
 
   setTuningCorrection: (correction) => {
@@ -502,6 +578,65 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.error('Failed to fetch statistics:', error);
     } finally {
       set({ statisticsLoading: false });
+    }
+  },
+
+  calculateCost: async (materialIds?: string[]) => {
+    const { selectedTubes, costParams } = get();
+    const ids = materialIds || selectedTubes.map((t) => t.id);
+
+    if (ids.length === 0) {
+      set({ costCalculation: null });
+      return;
+    }
+
+    set({ costCalculationLoading: true });
+    try {
+      const result = await costService.calculate({
+        material_ids: ids,
+        ...costParams,
+      });
+      set({ costCalculation: result });
+    } catch (error) {
+      console.error('Failed to calculate cost:', error);
+    } finally {
+      set({ costCalculationLoading: false });
+    }
+  },
+
+  setCostParams: (params) => {
+    set((state) => ({
+      costParams: { ...state.costParams, ...params },
+    }));
+  },
+
+  clearCostCalculation: () => {
+    set({ costCalculation: null });
+  },
+
+  fetchCostStatistics: async () => {
+    set({ costStatisticsLoading: true });
+    try {
+      const data = await costService.getStatistics();
+      set({ costStatistics: data });
+    } catch (error) {
+      console.error('Failed to fetch cost statistics:', error);
+    } finally {
+      set({ costStatisticsLoading: false });
+    }
+  },
+
+  createCostSnapshot: async (materialIds: string[]): Promise<CostSnapshot | null> => {
+    const { costParams } = get();
+    try {
+      const snapshot = await costService.createSnapshot({
+        material_ids: materialIds,
+        ...costParams,
+      });
+      return snapshot;
+    } catch (error) {
+      console.error('Failed to create cost snapshot:', error);
+      return null;
     }
   },
 }));
