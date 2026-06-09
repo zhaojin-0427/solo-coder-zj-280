@@ -117,18 +117,23 @@ const StatisticsPage = () => {
             )}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {statistics.material_usage && statistics.material_usage.length > 0 && (
               <MaterialUsageChart data={statistics.material_usage} />
             )}
-            {statistics.tuning_statistics && (
-              <TuningCorrectionChart data={statistics.tuning_statistics} />
+            {(!statistics.material_usage || statistics.material_usage.length === 0) && (
+              <div className="hidden lg:block" />
             )}
           </div>
 
+          {statistics.tuning_statistics && (
+            <TuningCorrectionChart data={statistics.tuning_statistics} />
+          )}
+
           {(!statistics.pitch_range_by_material || statistics.pitch_range_by_material.length === 0) &&
            (!statistics.chord_statistics || statistics.chord_statistics.length === 0) &&
-           (!statistics.material_usage || statistics.material_usage.length === 0) && (
+           (!statistics.material_usage || statistics.material_usage.length === 0) &&
+           (!statistics.tuning_statistics?.avg_correction_by_material || statistics.tuning_statistics.avg_correction_by_material.length === 0) && (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                 <BarChart3 className="w-10 h-10 text-gray-400" />

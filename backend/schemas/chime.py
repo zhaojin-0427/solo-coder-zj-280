@@ -31,3 +31,4 @@ class WindChimeUpdate(BaseModel):
     materials: Optional[List[str]] = None
     hang_order: Optional[List[str]] = None
     chord_info: Optional[Dict[str, Any]] = None
+    tuning_corrections: Optional[List[TuningCorrection]] = None

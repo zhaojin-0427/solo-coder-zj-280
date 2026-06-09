@@ -50,6 +50,14 @@ class ChimeService:
             update_data["chord_info"] = json.dumps(data["chord_info"])
 
         updated = self.repository.update(chime, update_data)
+
+        tuning_corrections = data.get("tuning_corrections")
+        if tuning_corrections is not None:
+            self.repository.delete_tuning_corrections_for_chime(chime_id)
+            for tc in tuning_corrections:
+                tc_dict = tc.model_dump() if hasattr(tc, "model_dump") else tc
+                self.repository.add_tuning_correction(chime_id, tc_dict)
+
         db.session.commit()
         return updated
 

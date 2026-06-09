@@ -18,10 +18,12 @@ import { Play, Save, Trash2, Sparkles, Plus } from 'lucide-react';
 import PageContainer from '../components/layout/PageContainer';
 import ChimeTube from '../components/listener/ChimeTube';
 import ChordInfoDisplay from '../components/listener/ChordInfoDisplay';
+import TuningPanel from '../components/listener/TuningPanel';
 import MaterialCard from '../components/materials/MaterialCard';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import { Tabs, TabPanel } from '../components/ui/Tabs';
 import { useAppStore } from '../store/useAppStore';
 import { ChordAnalysis } from '../types';
 
@@ -30,20 +32,49 @@ const ListenerPage = () => {
     materials,
     chimeTubes,
     chordAnalysis,
+    currentChime,
+    tuningCorrections,
     fetchMaterials,
     addTubeToChime,
-    removeTubeFromChime,
     reorderTubes,
     analyzeChord,
     playChordSound,
     saveChime,
     clearChime,
+    setTuningCorrection,
+    removeTuningCorrection,
+    clearTuningCorrections,
   } = useAppStore();
 
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [chimeName, setChimeName] = useState('');
   const [chimeDescription, setChimeDescription] = useState('');
+  const [activeTab, setActiveTab] = useState('chord');
+
+  useEffect(() => {
+    if (currentChime) {
+      setChimeName(currentChime.name);
+      setChimeDescription(currentChime.description || '');
+    }
+  }, [currentChime]);
+
+  const tabConfig = [
+    { key: 'chord', label: '和弦分析' },
+    {
+      key: 'tuning',
+      label: (
+        <span className="flex items-center gap-1">
+          调音实测
+          {tuningCorrections.length > 0 && (
+            <span className="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded-full">
+              {tuningCorrections.length}
+            </span>
+          )}
+        </span>
+      ),
+    },
+  ];
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -126,7 +157,7 @@ const ListenerPage = () => {
                     <>
                       <Button variant="outline" size="sm" onClick={() => setIsSaveModalOpen(true)}>
                         <Save className="w-4 h-4 mr-1" />
-                        保存
+                        {currentChime ? '更新作品' : '保存'}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={clearChime} className="text-red-500">
                         <Trash2 className="w-4 h-4" />
@@ -191,29 +222,49 @@ const ListenerPage = () => {
         </div>
 
         <div className="space-y-6">
-          <ChordInfoDisplay analysis={chordAnalysis as ChordAnalysis} />
+          <Tabs
+            tabs={tabConfig}
+            defaultTab="chord"
+            onTabChange={setActiveTab}
+            className="w-full"
+          >
+            <TabPanel tabKey="chord" activeTab={activeTab}>
+              <div className="space-y-6">
+                <ChordInfoDisplay analysis={chordAnalysis as ChordAnalysis} />
 
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">💡 设计提示</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>悬挂顺序会影响和弦的层次感</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>建议使用3-5根管体获得最佳和声效果</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>不同材质组合会产生独特的音色</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary">•</span>
-                <span>协和度低于30%时音色最和谐</span>
-              </li>
-            </ul>
-          </div>
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">💡 设计提示</h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>悬挂顺序会影响和弦的层次感</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>建议使用3-5根管体获得最佳和声效果</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>不同材质组合会产生独特的音色</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>协和度低于30%时音色最和谐</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </TabPanel>
+            <TabPanel tabKey="tuning" activeTab={activeTab}>
+              <TuningPanel
+                materials={chimeTubes}
+                tuningCorrections={tuningCorrections}
+                onUpdateCorrection={setTuningCorrection}
+                onRemoveCorrection={removeTuningCorrection}
+                onClearAll={clearTuningCorrections}
+              />
+            </TabPanel>
+          </Tabs>
         </div>
       </div>
 
@@ -245,7 +296,7 @@ const ListenerPage = () => {
       <Modal
         isOpen={isSaveModalOpen}
         onClose={() => setIsSaveModalOpen(false)}
-        title="保存风铃作品"
+        title={currentChime ? '更新风铃作品' : '保存风铃作品'}
       >
         <div className="space-y-4">
           <Input

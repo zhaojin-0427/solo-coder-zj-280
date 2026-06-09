@@ -1,4 +1,4 @@
-import { Calendar, Music, Play, Edit2, Trash2, Download } from 'lucide-react';
+import { Calendar, Music, Play, Edit2, Trash2, Download, Sliders } from 'lucide-react';
 import { WindChime, Material, MaterialType } from '../../types';
 import { MATERIAL_TYPE_INFO } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
@@ -79,11 +79,22 @@ const ChimeCard = ({ chime, onLoadToEditor, onDelete }: ChimeCardProps) => {
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold text-gray-900 truncate">{chime.name}</h3>
-          {chime.chord_info && chime.chord_info.chord_names && chime.chord_info.chord_names.length > 0 && (
-            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium flex-shrink-0 ml-2">
-              {chime.chord_info.chord_names[0]}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+            {chime.tuning_corrections && chime.tuning_corrections.length > 0 && (
+              <span
+                className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium flex items-center gap-1"
+                title={`已录入 ${chime.tuning_corrections.length} 条调音记录`}
+              >
+                <Sliders className="w-3 h-3" />
+                {chime.tuning_corrections.length}
+              </span>
+            )}
+            {chime.chord_info && chime.chord_info.chord_names && chime.chord_info.chord_names.length > 0 && (
+              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium">
+                {chime.chord_info.chord_names[0]}
+              </span>
+            )}
+          </div>
         </div>
 
         {chime.description && (

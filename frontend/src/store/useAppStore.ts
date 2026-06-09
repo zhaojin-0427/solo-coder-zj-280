@@ -7,9 +7,11 @@ import {
   CreateMaterialData,
   UpdateMaterialData,
   CreateChimeData,
+  UpdateChimeData,
   MaterialFilter,
   MaterialType,
   StatisticsData,
+  TuningCorrection,
 } from '../types';
 import { materialService } from '../services/materialService';
 import { calculatorService } from '../services/calculatorService';
@@ -45,6 +47,8 @@ interface AppState {
   chimesLoading: boolean;
   currentChime: WindChime | null;
 
+  tuningCorrections: TuningCorrection[];
+
   statistics: StatisticsData;
   statisticsLoading: boolean;
 
@@ -72,9 +76,14 @@ interface AppState {
   clearChime: () => void;
 
   saveChime: (name: string, description?: string) => Promise<void>;
+  updateChime: (id: string, data: Partial<UpdateChimeData>) => Promise<void>;
   fetchChimes: () => Promise<void>;
   loadChimeToEditor: (chime: WindChime) => void;
   deleteChime: (id: string) => Promise<void>;
+
+  setTuningCorrection: (correction: TuningCorrection) => void;
+  removeTuningCorrection: (materialId: string) => void;
+  clearTuningCorrections: () => void;
 
   fetchStatistics: () => Promise<void>;
 }
@@ -110,6 +119,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   chimesLoading: false,
   currentChime: null,
 
+  tuningCorrections: [],
+
   statistics: {
     pitch_range_by_material: [],
     chord_statistics: [],
@@ -117,6 +128,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     tuning_statistics: {
       avg_correction_by_material: [],
       common_corrections: [],
+      deviation_trend: {
+        positive_count: 0,
+        negative_count: 0,
+        stable_count: 0,
+        total_count: 0,
+        trend_percentage: {
+          positive: 0,
+          negative: 0,
+          stable: 0,
+        },
+      },
+      common_note_combinations: [],
     },
   },
   statisticsLoading: false,
@@ -248,6 +271,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedTubes: newTubes,
         chimeTubes: newTubes,
         hangOrder: newTubes.map((t) => t.id),
+        tuningCorrections: state.tuningCorrections.filter((c) => c.material_id !== materialId),
       };
     });
   },
@@ -316,11 +340,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       chimeTubes: [],
       hangOrder: [],
       chordAnalysis: null,
+      tuningCorrections: [],
+      currentChime: null,
     });
   },
 
   saveChime: async (name, description = '') => {
-    const { selectedTubes, hangOrder, chordAnalysis } = get();
+    const { selectedTubes, hangOrder, chordAnalysis, tuningCorrections, currentChime } = get();
     if (selectedTubes.length === 0) return;
 
     try {
@@ -334,13 +360,37 @@ export const useAppStore = create<AppState>((set, get) => ({
           frequencies: selectedTubes.map((t) => t.theoretical_pitch),
           notes: selectedTubes.map((t) => t.theoretical_note),
         },
+        tuning_corrections: tuningCorrections.length > 0 ? tuningCorrections : undefined,
       };
-      const newChime = await chimeService.create(chimeData);
+
+      let resultChime: WindChime;
+      if (currentChime) {
+        resultChime = await chimeService.update(String(currentChime.id), chimeData as unknown as UpdateChimeData);
+      } else {
+        resultChime = await chimeService.create(chimeData);
+      }
+
       set((state) => ({
-        chimes: [newChime, ...state.chimes],
+        chimes: currentChime
+          ? state.chimes.map((c) => (String(c.id) === String(currentChime.id) ? resultChime : c))
+          : [resultChime, ...state.chimes],
+        currentChime: resultChime,
       }));
     } catch (error) {
       console.error('Failed to save chime:', error);
+      throw error;
+    }
+  },
+
+  updateChime: async (id, data) => {
+    try {
+      const updated = await chimeService.update(String(id), data);
+      set((state) => ({
+        chimes: state.chimes.map((c) => (String(c.id) === id ? updated : c)),
+        currentChime: String(state.currentChime?.id) === id ? updated : state.currentChime,
+      }));
+    } catch (error) {
+      console.error('Failed to update chime:', error);
       throw error;
     }
   },
@@ -368,12 +418,59 @@ export const useAppStore = create<AppState>((set, get) => ({
       })
       .filter((m): m is Material => m !== undefined);
 
+    const sortedMaterials = (chime.hang_order as string[] || [])
+      .map((id) => tubeMaterials.find((m) => m.id === id))
+      .filter((m): m is Material => m !== undefined);
+
+    const remainingMaterials = tubeMaterials.filter(
+      (m) => !sortedMaterials.find((s) => s.id === m.id)
+    );
+
+    const finalMaterials = [...sortedMaterials, ...remainingMaterials];
+
     set({
-      selectedTubes: tubeMaterials,
-      chimeTubes: tubeMaterials,
-      hangOrder: chime.hang_order as unknown as string[],
+      selectedTubes: finalMaterials,
+      chimeTubes: finalMaterials,
+      hangOrder: chime.hang_order as string[],
+      chordAnalysis: chime.chord_info
+        ? ({
+            chord_name: chime.chord_info.chord_name,
+            chord_names: chime.chord_info.chord_names || [chime.chord_info.chord_name],
+            frequencies: chime.chord_info.frequencies || [],
+            notes: chime.chord_info.notes || [],
+            dissonance_score: chime.chord_info.dissonance_score,
+          } as ChordAnalysis)
+        : null,
+      tuningCorrections: chime.tuning_corrections || [],
       currentChime: chime,
     });
+  },
+
+  setTuningCorrection: (correction) => {
+    set((state) => {
+      const existingIndex = state.tuningCorrections.findIndex(
+        (c) => c.material_id === correction.material_id
+      );
+      const newCorrections = [...state.tuningCorrections];
+      if (existingIndex >= 0) {
+        newCorrections[existingIndex] = correction;
+      } else {
+        newCorrections.push(correction);
+      }
+      return { tuningCorrections: newCorrections };
+    });
+  },
+
+  removeTuningCorrection: (materialId) => {
+    set((state) => ({
+      tuningCorrections: state.tuningCorrections.filter(
+        (c) => c.material_id !== materialId
+      ),
+    }));
+  },
+
+  clearTuningCorrections: () => {
+    set({ tuningCorrections: [] });
   },
 
   deleteChime: async (id: string) => {

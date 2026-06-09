@@ -29,6 +29,7 @@ class WindChime(db.Model):
             "materials": json.loads(self.materials) if self.materials else [],
             "hang_order": json.loads(self.hang_order) if self.hang_order else [],
             "chord_info": json.loads(self.chord_info) if self.chord_info else {},
+            "tuning_corrections": [tc.to_dict() for tc in self.tuning_corrections] if self.tuning_corrections else [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

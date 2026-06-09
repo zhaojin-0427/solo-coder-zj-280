@@ -57,19 +57,45 @@ export interface ChordAnalysis {
 }
 
 export interface TuningCorrection {
-  material_id: number;
+  id?: string;
+  chime_id?: string;
+  material_id: string;
   theoretical_freq: number;
   actual_freq: number;
   correction_cents: number;
   recorded_at?: string;
 }
 
+export type TuningStatus = 'none' | 'ok' | 'warning' | 'error';
+
+export interface DeviationTrend {
+  positive_count: number;
+  negative_count: number;
+  stable_count: number;
+  total_count: number;
+  trend_percentage: {
+    positive: number;
+    negative: number;
+    stable: number;
+  };
+}
+
+export interface NoteDeviation {
+  note: string;
+  deviation: 'sharp' | 'flat' | 'stable';
+}
+
+export interface NoteCombination {
+  notes: NoteDeviation[];
+  count: number;
+}
+
 export interface WindChime {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
-  materials: Material[];
-  hang_order: number[];
+  materials: Material[] | string[];
+  hang_order: string[];
   chord_info: {
     chord_name: string;
     chord_names: string[];
@@ -167,6 +193,29 @@ export interface TuningCorrectionStat {
   trend: 'positive' | 'negative' | 'stable';
 }
 
+export interface AvgCorrectionByMaterial {
+  material_type: string;
+  avg_correction: number;
+  count: number;
+  trend?: 'positive' | 'negative' | 'stable';
+}
+
+export interface CommonCorrection {
+  material_type: string;
+  original_note: string;
+  corrected_note: string;
+  frequency_diff: number;
+  correction_cents: number;
+  count: number;
+}
+
+export interface TuningStatistics {
+  avg_correction_by_material: AvgCorrectionByMaterial[];
+  common_corrections: CommonCorrection[];
+  deviation_trend: DeviationTrend;
+  common_note_combinations: NoteCombination[];
+}
+
 export interface StatisticsData {
   pitch_range_by_material: Array<{
     material_type: string;
@@ -185,21 +234,7 @@ export interface StatisticsData {
     used_count: number;
     utilization_rate: number;
   }>;
-  tuning_statistics: {
-    avg_correction_by_material: Array<{
-      material_type: string;
-      avg_correction: number;
-      count: number;
-    }>;
-    common_corrections: Array<{
-      material_type: string;
-      original_note: string;
-      corrected_note: string;
-      frequency_diff: number;
-      correction_cents: number;
-      count: number;
-    }>;
-  };
+  tuning_statistics: TuningStatistics;
 }
 
 export interface MaterialTypeInfo {

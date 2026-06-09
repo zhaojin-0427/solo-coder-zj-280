@@ -79,6 +79,14 @@ class ChimeRepository(BaseRepository[WindChime]):
         result = self.db_session.execute(stmt)
         return list(result.scalars().all())
 
+    def delete_tuning_corrections_for_chime(self, chime_id: str) -> None:
+        stmt = select(TuningCorrection).where(TuningCorrection.chime_id == chime_id)
+        result = self.db_session.execute(stmt)
+        corrections = list(result.scalars().all())
+        for correction in corrections:
+            self.db_session.delete(correction)
+        self.db_session.flush()
+
     def get_tuning_statistics(self) -> List[dict]:
         stmt = text("""
             SELECT

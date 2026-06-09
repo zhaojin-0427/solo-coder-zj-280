@@ -44,3 +44,19 @@ export function getFrequencyRangeLabel(minFreq: number, maxFreq: number): string
   const maxNote = midiToNoteName(frequencyToMidi(maxFreq));
   return `${minNote.note}${minNote.octave} - ${maxNote.note}${maxNote.octave}`;
 }
+
+export function calculateCentsBetween(theoreticalFreq: number, actualFreq: number): number {
+  if (theoreticalFreq <= 0 || actualFreq <= 0) return 0;
+  return 1200 * Math.log2(actualFreq / theoreticalFreq);
+}
+
+export function getTuningStatus(cents: number): { status: 'ok' | 'warning' | 'error'; label: string; color: string } {
+  const absCents = Math.abs(cents);
+  if (absCents <= 5) {
+    return { status: 'ok', label: '无需调整', color: '#10B981' };
+  } else if (absCents <= 15) {
+    return { status: 'warning', label: '建议微调', color: '#F59E0B' };
+  } else {
+    return { status: 'error', label: '偏差较大', color: '#EF4444' };
+  }
+}

@@ -12,8 +12,18 @@ export const statisticsService = {
 
     const tuningData = tuning.data;
     const normalizedTuning = Array.isArray(tuningData)
-      ? { avg_correction_by_material: [], common_corrections: [] }
-      : tuningData || { avg_correction_by_material: [], common_corrections: [] };
+      ? {
+          avg_correction_by_material: [],
+          common_corrections: [],
+          deviation_trend: undefined,
+          common_note_combinations: [],
+        }
+      : tuningData || {
+          avg_correction_by_material: [],
+          common_corrections: [],
+          deviation_trend: undefined,
+          common_note_combinations: [],
+        };
 
     return {
       pitch_range_by_material: pitchRange.data || [],
