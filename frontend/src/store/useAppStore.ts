@@ -374,30 +374,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveChime: async (name, description = '') => {
-    const { selectedTubes, hangOrder, chordAnalysis, tuningCorrections, currentChime, costCalculation, createCostSnapshot } = get();
+    const { selectedTubes, hangOrder, chordAnalysis, tuningCorrections, currentChime, createCostSnapshot } = get();
     if (selectedTubes.length === 0) return;
 
     try {
-      let costSnapshot = null;
-      if (costCalculation) {
-        costSnapshot = {
-          material_costs: costCalculation.material_costs,
-          total_material_cost: costCalculation.total_material_cost,
-          total_loss_cost: costCalculation.total_loss_cost,
-          labor_hours: costCalculation.labor_hours,
-          labor_cost: costCalculation.labor_cost,
-          labor_rate: costCalculation.labor_rate,
-          overhead_rate: costCalculation.overhead_rate,
-          overhead_cost: costCalculation.overhead_cost,
-          total_cost: costCalculation.total_cost,
-          suggested_price: costCalculation.suggested_price,
-          profit_margin: costCalculation.profit_margin,
-          profit_rate: costCalculation.profit_rate,
-          calculated_at: new Date().toISOString(),
-        };
-      } else {
-        costSnapshot = await createCostSnapshot(selectedTubes.map((t) => t.id));
-      }
+      const costSnapshot = await createCostSnapshot(selectedTubes.map((t) => t.id));
 
       const baseData = {
         name,
@@ -605,9 +586,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setCostParams: (params) => {
+    const { selectedTubes, calculateCost } = get();
     set((state) => ({
       costParams: { ...state.costParams, ...params },
     }));
+    if (selectedTubes.length > 0) {
+      setTimeout(() => calculateCost(), 0);
+    }
   },
 
   clearCostCalculation: () => {

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+from schemas.cost import CostSnapshot
 
 
 class ChordInfo(BaseModel):
@@ -23,6 +24,7 @@ class WindChimeCreate(BaseModel):
     hang_order: List[str]
     chord_info: Dict[str, Any]
     tuning_corrections: Optional[List[TuningCorrection]] = None
+    cost_snapshot: Optional[CostSnapshot] = None
 
 
 class WindChimeUpdate(BaseModel):
@@ -32,3 +34,4 @@ class WindChimeUpdate(BaseModel):
     hang_order: Optional[List[str]] = None
     chord_info: Optional[Dict[str, Any]] = None
     tuning_corrections: Optional[List[TuningCorrection]] = None
+    cost_snapshot: Optional[CostSnapshot] = None
